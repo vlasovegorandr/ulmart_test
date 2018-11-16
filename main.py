@@ -7,8 +7,9 @@ from time import strftime
 import traceback
 import json
 import sys
+import settings
 
-engine = create_engine('sqlite:///monitoring.db')
+engine = create_engine('sqlite:///'+settings.path_to_db())
 Base = declarative_base()
 Session = sessionmaker(bind=engine)
 
@@ -27,7 +28,7 @@ def poll_the_urls(url_gen):
     for item in url_gen:
         url = item.get('url')
         label = item.get('label')
-        response = requests.get(url, stream = True)
+        response = requests.get(url, timeout=settings.timeout())
         if response.status_code == 200:
             yield {
                 'timestamp': strftime('%d.%b.%Y %H:%M:%S'),
@@ -35,7 +36,7 @@ def poll_the_urls(url_gen):
                 'label': label,
                 'status_code': response.status_code,
                 'response_time': response.elapsed.total_seconds() * 1000,
-                'content_length': None, #response.headers['content-length'],
+                'content_length': response.headers.get('Content-Length'),
             }
         else:
             error_info = {
@@ -45,7 +46,7 @@ def poll_the_urls(url_gen):
                 'content_length': None,
                 'timestamp': strftime('%d.%b.%Y %H:%M:%S'),
             }
-            with open('404_errors.json', 'a') as file_404:
+            with open(settings.path_to_404_errors(), 'a') as file_404:
                 json.dump(error_info, file_404, ensure_ascii=False, indent=4)
 
 
@@ -85,5 +86,5 @@ if __name__ == '__main__':
                          "traceback_info": traceback.format_exc()
                         }
                      }
-        with open('exceptions.json', 'w') as file:
+        with open(settings.path_to_exceptions(), 'a') as file:
             json.dump(json_text, file, ensure_ascii=False, indent=4)
