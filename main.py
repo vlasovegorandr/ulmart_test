@@ -77,8 +77,6 @@ if __name__ == '__main__':
         write_to_db(poll_the_urls(open_file(filepath)))
 
     except Exception as ex:
-        template = "Exception of type {0}, arguments: \n{1!r}"
-        message = template.format(type(ex).__name__, ex.args)
         timestamp = strftime('%d.%b.%Y %H:%M:%S')
         json_text = {"timestamp": timestamp,
                      "error": {
